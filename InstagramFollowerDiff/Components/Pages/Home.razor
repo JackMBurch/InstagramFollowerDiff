@@ -1,0 +1,143 @@
+﻿@page "/"
+@using InstagramFollowerDiff.Models
+
+<PageTitle>Home</PageTitle>
+<h1>Instagram Follwer Diff</h1>
+
+<p>Please upload a following and follower JSON file.</p>
+
+
+<InputFile OnChange="@LoadFiles" multiple />
+<p></p>
+<p>Followers File: @followers?.Name</p>
+<p>Following File: @following?.Name</p>
+
+@if (error != null)
+{
+    <p class="error">@error</p>
+}
+
+@if (NotFollowingBack.Count != 0)
+{
+    <p>@NotFollowingBack.Count not following back</p>
+    <ul>
+        @foreach (var user in NotFollowingBack)
+        {
+            <li>
+                <td><a href="@user.Link">@user.User</a></td>
+            </li>
+        }
+    </ul>
+}
+@code {
+    IBrowserFile? following, followers;
+
+    string? error;
+
+    List<IGListItem> NotFollowingBack = [];
+
+    private void Go()
+    {
+        Console.WriteLine("a");
+    }
+
+    private async void LoadFiles(InputFileChangeEventArgs e)
+    {
+        following = null;
+        followers = null;
+        error = null;
+        NotFollowingBack = [];
+        var files = e.GetMultipleFiles();
+        foreach (var file in files)
+        {
+            Console.WriteLine(file.Name);
+            if (file.Name.ToLower().Contains("following"))
+                following = file;
+            else if (file.Name.ToLower().Contains("followers"))
+                followers = file;
+        }
+
+        if (followers == null)
+        {
+            error = "No followers file found.";
+            return;
+        }
+        if (following == null)
+        {
+            error = "No following file found.";
+            return;
+        }
+
+        if (followers.ContentType != "application/json" || following.ContentType != "application/json")
+        {
+            error = "Please choose a JSON file.";
+            return;
+        }
+        var followerDiffDir = Path.Combine(Path.GetTempPath(), "InstagramFollowerDiff");
+        Directory.CreateDirectory(followerDiffDir);
+        string tempDirectory = Path.Combine(followerDiffDir, Path.GetRandomFileName());
+        string followersPath = tempDirectory + "-followers.json";
+        string followingPath = tempDirectory + "-following.json";
+
+        await using (FileStream fs = new(followersPath, FileMode.Create))
+        {
+            await followers.OpenReadStream().CopyToAsync(fs);
+        }
+        Console.WriteLine("Created " + followersPath);
+
+        await using (FileStream fs = new(followingPath, FileMode.Create))
+        {
+            await following.OpenReadStream().CopyToAsync(fs);
+        }
+        Console.WriteLine("Created " + followingPath);
+
+        List<Relationships>? followersRelationship, followingRelationships;
+        List<IGListItem> followersList = [], followingList = [];
+        try
+        {
+            using (StreamReader sr = new StreamReader(followersPath))
+            {
+                string json = sr.ReadToEnd();
+                followersRelationship = JsonSerializer.Deserialize<List<Relationships>>(json);
+            }
+            if (followersRelationship == null)
+                throw new Exception();
+            followersList = followersRelationship.Select(x => x.StringListData.FirstOrDefault()).ToList()!;
+            if (followersList == null)
+                throw new Exception();
+        }
+        catch
+        {
+            Console.WriteLine("Unable to followers file");
+            error = "Unable to parse followers file";
+        }
+
+        try
+        {
+            using (StreamReader sr = new StreamReader(followingPath))
+            {
+                string json = sr.ReadToEnd();
+                FollowingRoot? followingRoot = JsonSerializer.Deserialize<FollowingRoot>(json);
+                followingRelationships = followingRoot?.RelationshipsFollowing;
+            }
+            if (followingRelationships == null)
+                throw new Exception();
+            followingList = followingRelationships.Select(x => x.StringListData.FirstOrDefault()).ToList()!;
+            if (followingList == null)
+                throw new Exception();
+        }
+        catch
+        {
+            Console.WriteLine("Unable to parse following file");
+            error = "Unable to parse following file";
+        }
+
+        NotFollowingBack = followingList.ExceptBy(followersList.Select(x => x.User), x => x.User).ToList();
+
+
+        File.Delete(followersPath);
+        Console.WriteLine("Deleted " + followersPath);
+        File.Delete(followingPath);
+        Console.WriteLine("Deleted " + followingPath);
+    }
+}
