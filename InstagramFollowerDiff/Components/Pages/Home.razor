@@ -10,12 +10,12 @@
 
     <InputFile OnChange="@LoadFiles" multiple />
     <p></p>
-</div>
 
-@if (Error != null)
-{
-    <p class="error">@Error</p>
-}
+    @if (Error != null)
+    {
+        <p class="error">@Error</p>
+    }
+</div>
 
 @if (NotFollowingBack.Count != 0)
 {
