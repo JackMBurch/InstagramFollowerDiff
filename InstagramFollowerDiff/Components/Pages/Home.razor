@@ -2,19 +2,17 @@
 @using InstagramFollowerDiff.Models
 
 <PageTitle>Home</PageTitle>
-<h1>Instagram Follwer Diff</h1>
+<h1>test</h1>
 
-<p>Please upload a following and follower JSON file.</p>
+<p>Please upload an instagram data zip file, or a following and follower JSON file.</p>
 
 
 <InputFile OnChange="@LoadFiles" multiple />
 <p></p>
-<p>Followers File: @followers?.Name</p>
-<p>Following File: @following?.Name</p>
 
-@if (error != null)
+@if (Error != null)
 {
-    <p class="error">@error</p>
+    <p class="error">@Error</p>
 }
 
 @if (NotFollowingBack.Count != 0)
@@ -24,15 +22,31 @@
         @foreach (var user in NotFollowingBack)
         {
             <li>
-                <td><a href="@user.Link">@user.User</a></td>
+                <a href="@user.Link">@user.User</a>
             </li>
         }
     </ul>
 }
 @code {
-    IBrowserFile? following, followers;
+    public static readonly string JsonContentType = "application/json";
+    public static readonly string ZipContentType = "application/zip";
+    public static readonly string ZipContentType2 = "application/x-zip-compressed";
+    private static readonly string[] AcceptedContentTypes = [JsonContentType, ZipContentType, ZipContentType2];
+    public static readonly string JsonExtension = "json";
+    public static readonly string ZipExtension = "zip";
+    private static readonly string[] AcceptedExtensions = [JsonExtension, ZipExtension];
 
-    string? error;
+    private static readonly Regex ZipFileContentsFollowersRegex = new(@"^connections\/followers_and_following\/followers[^\/\.]*\.json$", RegexOptions.IgnoreCase);
+    private static readonly Regex ZipFileContentsFollowingRegex = new(@"^connections\/followers_and_following\/following[^\/\.]*\.json$", RegexOptions.IgnoreCase);
+
+    public static string FollowersDiffPath
+    {
+        get => Path.Combine(Path.GetTempPath(), "InstagramFollowerDiff");
+    }
+
+    private IBrowserFile? Following, Followers, Zip;
+
+    string? Error;
 
     List<IGListItem> NotFollowingBack = [];
 
@@ -43,101 +57,215 @@
 
     private async void LoadFiles(InputFileChangeEventArgs e)
     {
-        following = null;
-        followers = null;
-        error = null;
-        NotFollowingBack = [];
-        var files = e.GetMultipleFiles();
-        foreach (var file in files)
-        {
-            Console.WriteLine(file.Name);
-            if (file.Name.ToLower().Contains("following"))
-                following = file;
-            else if (file.Name.ToLower().Contains("followers"))
-                followers = file;
-        }
-
-        if (followers == null)
-        {
-            error = "No followers file found.";
-            return;
-        }
-        if (following == null)
-        {
-            error = "No following file found.";
-            return;
-        }
-
-        if (followers.ContentType != "application/json" || following.ContentType != "application/json")
-        {
-            error = "Please choose a JSON file.";
-            return;
-        }
-        var followerDiffDir = Path.Combine(Path.GetTempPath(), "InstagramFollowerDiff");
-        Directory.CreateDirectory(followerDiffDir);
-        string tempDirectory = Path.Combine(followerDiffDir, Path.GetRandomFileName());
-        string followersPath = tempDirectory + "-followers.json";
-        string followingPath = tempDirectory + "-following.json";
-
-        await using (FileStream fs = new(followersPath, FileMode.Create))
-        {
-            await followers.OpenReadStream().CopyToAsync(fs);
-        }
-        Console.WriteLine("Created " + followersPath);
-
-        await using (FileStream fs = new(followingPath, FileMode.Create))
-        {
-            await following.OpenReadStream().CopyToAsync(fs);
-        }
-        Console.WriteLine("Created " + followingPath);
-
-        List<Relationships>? followersRelationship, followingRelationships;
-        List<IGListItem> followersList = [], followingList = [];
         try
         {
-            using (StreamReader sr = new StreamReader(followersPath))
+            Zip = null;
+            Following = null;
+            Followers = null;
+            Error = null;
+            NotFollowingBack = [];
+
+            CleanTemp();
+
+            string temp = Path.Combine(FollowersDiffPath, Path.GetRandomFileName());
+            string followersPath = temp + "-followers.json";
+            string followingPath = temp + "-following.json";
+
+            var files = e.GetMultipleFiles();
+
+            foreach (var file in files)
             {
-                string json = sr.ReadToEnd();
-                followersRelationship = JsonSerializer.Deserialize<List<Relationships>>(json);
-            }
-            if (followersRelationship == null)
-                throw new Exception();
-            followersList = followersRelationship.Select(x => x.StringListData.FirstOrDefault()).ToList()!;
-            if (followersList == null)
-                throw new Exception();
-        }
-        catch
-        {
-            Console.WriteLine("Unable to followers file");
-            error = "Unable to parse followers file";
-        }
+                Console.WriteLine(file.Name);
 
-        try
-        {
-            using (StreamReader sr = new StreamReader(followingPath))
+                var ext = Regex.Match(file.Name, @"(?<=\.)[^.]+$").Value;
+
+                if (!AcceptedExtensions.Contains(ext) || !AcceptedContentTypes.Contains(file.ContentType))
+                {
+                    Console.WriteLine(file.Name + " not a valid file format.");
+                    Error = file.Name + " not a valid file format.";
+                    StateHasChanged();
+                    return;
+                }
+
+                if (ext == ZipExtension)
+                {
+                    if (!file.Name.StartsWith("instagram-"))
+                    {
+                        Console.WriteLine("Please make sure the zip file was generated by instagram. It must start with \"instagram-\".");
+                        Error = "Please make sure the zip file was generated by instagram. It must start with \"instagram-\".";
+                        StateHasChanged();
+                        return;
+                    }
+                    Zip = file;
+                    Following = null;
+                    Followers = null;
+                    continue;
+                }
+
+
+                if (file.Name.ToLower().Contains("following"))
+                    Following = file;
+                else if (file.Name.ToLower().Contains("followers"))
+                    Followers = file;
+            }
+
+            if (Zip == null)
             {
-                string json = sr.ReadToEnd();
-                FollowingRoot? followingRoot = JsonSerializer.Deserialize<FollowingRoot>(json);
-                followingRelationships = followingRoot?.RelationshipsFollowing;
+                if (Followers == null)
+                {
+                    Console.WriteLine("No followers file found.");
+                    Error = "No followers file found.";
+                    StateHasChanged();
+                    return;
+                }
+                if (Following == null)
+                {
+                    Console.WriteLine("No following file found.");
+                    Error = "No following file found.";
+                    StateHasChanged();
+                    return;
+                }
+
+                try
+                {
+                    await using (FileStream fs = new(followersPath, FileMode.Create))
+                        await Followers.OpenReadStream(maxAllowedSize: 10000000).CopyToAsync(fs);
+                    Console.WriteLine("Created " + followersPath);
+
+                    await using (FileStream fs = new(followingPath, FileMode.Create))
+                        await Following.OpenReadStream(maxAllowedSize: 10000000).CopyToAsync(fs);
+                    Console.WriteLine("Created " + followingPath);
+                }
+                catch (IOException)
+                {
+                    Console.WriteLine("File(s) too large.");
+                    Error = "File(s) too large.";
+                    StateHasChanged();
+                    return;
+                }
             }
-            if (followingRelationships == null)
-                throw new Exception();
-            followingList = followingRelationships.Select(x => x.StringListData.FirstOrDefault()).ToList()!;
-            if (followingList == null)
-                throw new Exception();
+            else
+            {
+                var zipPath = temp + ".zip";
+                try
+                {
+                    await using (FileStream fs = new(zipPath, FileMode.Create))
+                        await Zip.OpenReadStream(maxAllowedSize: 10000000).CopyToAsync(fs);
+                }
+                catch (IOException)
+                {
+                    Console.WriteLine("File(s) too large. Please make sure you requested \"Select types of information > Connections > Followers and following\" only.");
+                    Error = "File(s) too large. Please make sure you requested \"Select types of information > Connections > Followers and following\" only.";
+                    StateHasChanged();
+                    return;
+                }
+                try
+                {
+                    using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+                    {
+                        var followers = archive.Entries.Where(x => ZipFileContentsFollowersRegex.IsMatch(x.FullName)).FirstOrDefault();
+                        var following = archive.Entries.Where(x => ZipFileContentsFollowingRegex.IsMatch(x.FullName)).FirstOrDefault();
+                        if (followers == null)
+                        {
+                            Console.WriteLine("Followers file not found in zip archive");
+                            Error = "Followers file not found in zip archive";
+                            return;
+                        }
+                        if (following == null)
+                        {
+                            Console.WriteLine("Following file not found in zip archive");
+                            Error = "Following file not found in zip archive";
+                            return;
+                        }
+
+                        await using (FileStream fs = new(followersPath, FileMode.Create))
+                            await followers.Open().CopyToAsync(fs);
+                        Console.WriteLine("Created " + followersPath);
+
+                        await using (FileStream fs = new(followingPath, FileMode.Create))
+                            await following.Open().CopyToAsync(fs);
+                        Console.WriteLine("Created " + followingPath);
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("Error opening zip archive.");
+                    Error = "Error opening zip archive.";
+                    StateHasChanged();
+                    return;
+                }
+            }
+
+            List<Relationships>? followersRelationship, followingRelationships;
+            List<IGListItem> followersList = [], followingList = [];
+            try
+            {
+                using (StreamReader sr = new StreamReader(followersPath))
+                {
+                    string json = sr.ReadToEnd();
+                    followersRelationship = JsonSerializer.Deserialize<List<Relationships>>(json);
+                }
+                if (followersRelationship == null)
+                    throw new Exception();
+                followersList = followersRelationship.Select(x => x.StringListData.FirstOrDefault()).ToList()!;
+                if (followersList == null)
+                    throw new Exception();
+            }
+            catch
+            {
+                Console.WriteLine("Unable to parse followers file.");
+                Error = "Unable to parse followers file.";
+                StateHasChanged();
+                return;
+            }
+            try
+            {
+                using (StreamReader sr = new StreamReader(followingPath))
+                {
+                    string json = sr.ReadToEnd();
+                    FollowingRoot? followingRoot = JsonSerializer.Deserialize<FollowingRoot>(json);
+                    followingRelationships = followingRoot?.RelationshipsFollowing;
+                }
+                if (followingRelationships == null)
+                    throw new Exception();
+                followingList = followingRelationships.Select(x => x.StringListData.FirstOrDefault()).ToList()!;
+                if (followingList == null)
+                    throw new Exception();
+            }
+            catch
+            {
+                Console.WriteLine("Unable to parse following file.");
+                Error = "Unable to parse following file.";
+                StateHasChanged();
+                return;
+            }
+
+            NotFollowingBack = followingList.ExceptBy(followersList.Select(x => x.User), x => x.User).ToList();
+
+            StateHasChanged();
+
+            CleanTemp();
         }
-        catch
+        catch (Exception error)
         {
-            Console.WriteLine("Unable to parse following file");
-            error = "Unable to parse following file";
+            Console.WriteLine("Unhandled exception: " + error.Message);
+            Error = "Unhandled exception: " + error.Message;
+            StateHasChanged();
         }
+    }
 
-        NotFollowingBack = followingList.ExceptBy(followersList.Select(x => x.User), x => x.User).ToList();
+    private static void CleanTemp()
+    {
+        Directory.CreateDirectory(FollowersDiffPath);
+        DirectoryInfo di = new DirectoryInfo(FollowersDiffPath);
 
-
-        File.Delete(followersPath);
-        Console.WriteLine("Deleted " + followersPath);
-        File.Delete(followingPath);
-        Console.WriteLine("Deleted " + followingPath);
+        foreach (FileInfo file in di.GetFiles())
+        {
+            file.Delete();
+        }
+        foreach (DirectoryInfo dir in di.GetDirectories())
+        {
+            dir.Delete(true);
+        }
     }
 }
