@@ -20,11 +20,13 @@ main {
     height: 3.5rem;
     display: flex;
     align-items: center;
+    width: 100%;
+    padding: 0px;
 }
 
 .nav-item {
-    padding-left: 25px;
-    padding-right: 25px;
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
 @media (max-width: 640.98px) {

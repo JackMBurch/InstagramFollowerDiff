@@ -11,27 +11,24 @@
         <div class="top-row px-4 bg-body">
             <nav class="navbar navbar-expand-lg">
 
-                @*<a class="navbar-brand" href="#">I</a>*@
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav mr-auto">
-                        <li class="nav-item" style="">
-                            <NavLink class="nav-link text-body" href="#">
-                                Home
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-body" href="tutorial">Tutorial</NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-body" href="about">About</NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <span @onclick="ToggleTheme" class="nav-link text-body user-select-none" style="height: 100%">
-                                <MaterialIcon Theme="@MaterialIcon.Themes.Filled" Size="22">@App.Theme<span>_mode</span></MaterialIcon>
-                            </span>
-                        </li>
-                    </ul>
-                </div>
+                <ul class="navbar-nav" style="flex-direction: row;">
+                    <li class="nav-item" style="">
+                        <NavLink class="nav-link text-body" href="#">
+                            Home
+                        </NavLink>
+                    </li>
+                    <li class="nav-item">
+                        <NavLink class="nav-link text-body" href="tutorial">Tutorial</NavLink>
+                    </li>
+                    <li class="nav-item">
+                        <NavLink class="nav-link text-body" href="about">About</NavLink>
+                    </li>
+                    <li class="nav-item">
+                        <span @onclick="ToggleTheme" class="nav-link text-body user-select-none" style="height: 100%">
+                            <MaterialIcon Theme="@MaterialIcon.Themes.Filled" Size="22">@App.Theme<span>_mode</span></MaterialIcon>
+                        </span>
+                    </li>
+                </ul>
             </nav>
         </div>
 
