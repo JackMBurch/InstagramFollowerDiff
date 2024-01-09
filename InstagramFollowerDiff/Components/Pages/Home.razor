@@ -17,8 +17,6 @@
     {
         <p class="error">@Error</p>
     }
-
-    <p>@isDevice</p>
 </div>
 
 @if (NotFollowingBack.Count != 0)
@@ -29,19 +27,22 @@
         {
             var j = i;
 
-            <li @onclick="(()=>Check(j))" style="margin-top: 5px;">
+            <li style="margin-top: 5px;">
                 <input class="form-check-input" type="checkbox" value="" id="checkbox-@i">
                 &nbsp;
-                <label class="form-check-label" for="flexCheckDefault" id="checkbox-label-@i">
-                    @NotFollowingBack[i].User
-                </label>
+                @if (mobile)
+                {
+                    <a @onclick="(()=>CheckMobile(j))" href="@NotFollowingBack[i].Link" style="text-decoration: none; color: var(--bs-body-color)">@NotFollowingBack[i].User</a>
+                }
+                else
+                {
+                    <label @onclick="(()=>CheckDesktop(j))" class="form-check-label" for="flexCheckDefault" id="checkbox-label-@i">
+                        @NotFollowingBack[i].User
+                    </label>
+                }
             </li>
         }
     </ul>
-    @for (int i = 0; i < NotFollowingBack.Count; i++)
-    {
-        <a id="href-@i" href="@NotFollowingBack[i].Link">href-@i</a>
-    }
 }
     @code {
     public static readonly string JsonContentType = "application/json";
@@ -84,18 +85,15 @@
 
     }
 
-    public async void Check(int i)
+    public async void CheckDesktop(int i)
     {
-        Nav(i);
+        await jsRuntime.InvokeVoidAsync("open", NotFollowingBack[i].Link, "_blank");
         await jsRuntime.InvokeVoidAsync("checkCheckBox", i, "_blank");
     }
 
-    public async void Nav(int i)
+    public async void CheckMobile(int i)
     {
-        if (mobile)
-            await jsRuntime.InvokeVoidAsync("clickHref", i, "_blank");
-        else
-            await jsRuntime.InvokeVoidAsync("open", NotFollowingBack[i].Link, "_blank");
+        await jsRuntime.InvokeVoidAsync("checkCheckBox", i, "_blank");
     }
 
     private void Go()
