@@ -1,4 +1,6 @@
 ﻿@page "/"
+@inject NavigationManager _navigationManager
+@inject IJSRuntime jsRuntime
 
 <PageTitle>IGFollowBack</PageTitle>
 <div class="holder bg-body">
@@ -20,11 +22,17 @@
 @if (NotFollowingBack.Count != 0)
 {
     <p>@NotFollowingBack.Count not following back</p>
-    <ul>
-        @foreach (var user in NotFollowingBack)
+    <ul style="list-style-type: none; margin-left: -25px;">
+        @for (int i = 0; i < NotFollowingBack.Count; i++)
         {
-            <li>
-                <a href="@user.Link">@user.User</a>
+            var j = i;
+
+            <li @onclick="(()=>Check(j))" style="margin-top: 5px;">
+                <input class="form-check-input" type="checkbox" value="" id="checkbox-@i">
+                &nbsp;
+                <label class="form-check-label" for="flexCheckDefault" id="checkbox-label-@i">
+                    @NotFollowingBack[i].User
+                </label>
             </li>
         }
     </ul>
@@ -51,6 +59,37 @@
     string? Error;
 
     List<IGListItem> NotFollowingBack = [];
+
+    private string? isDevice { get; set; }
+    private bool mobile { get; set; }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        isDevice = await FindResponsiveness();
+        Console.WriteLine(isDevice);
+    }
+
+    public async Task<string> FindResponsiveness()
+    {
+        mobile = await jsRuntime.InvokeAsync<bool>("isDevice");
+        return mobile ? "Mobile" : "Desktop";
+
+    }
+
+    public async void Check(int i)
+    {
+        Nav(NotFollowingBack[i].Link);
+        await jsRuntime.InvokeVoidAsync("checkCheckBox", i, "_blank");
+    }
+
+    public async void Nav(string location)
+    {
+        if (mobile)
+            _navigationManager.NavigateTo(location);
+        else
+            await jsRuntime.InvokeVoidAsync("open", location, "_blank");
+    }
 
     private void Go()
     {

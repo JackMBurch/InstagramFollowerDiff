@@ -2,7 +2,8 @@
 @inject ILocalStorageService _localStorage
 
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="@Theme">
+<!--<html lang="en" data-bs-theme="@Theme"> -->
+<html lang="en" data-bs-theme="dark">
 
 <head>
     <meta charset="utf-8" />
@@ -15,6 +16,7 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Sharp|Material+Icons+Round|Material+Icons+Two+Tone" rel="stylesheet">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9294268719208041" crossorigin="anonymous"></script>
+    <script src="lib/platform.js"></script>
     <HeadOutlet />
 </head>
 
@@ -30,6 +32,7 @@
     public const string ThemeLight = "light";
     public const string ThemeDark = "dark";
 
+    /*
     protected override async void OnInitialized()
     {
         Theme = await _localStorage.GetItemAsStringAsync("theme");
@@ -38,6 +41,7 @@
         else
             StateHasChanged();
     }
+    */
 
     public void ChangeTheme(string theme)
     {
