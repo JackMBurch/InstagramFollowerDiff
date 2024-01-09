@@ -1,23 +1,71 @@
 ﻿@inherits LayoutComponentBase
+@inject ILocalStorageService _localStorage
+@inject NavigationManager _navigationManager
 
-<div class="page">
-   @* <div class="sidebar">
-        <NavMenu />
+<div class="page" data-bs-theme="@App.Theme">
+    @*<div class="sidebar">
+    <NavMenu />
     </div> *@
 
     <main>
-    @*    <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        <div class="top-row px-4 bg-body">
+            <nav class="navbar navbar-expand-lg">
+
+                @*<a class="navbar-brand" href="#">I</a>*@
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item" style="">
+                            <NavLink class="nav-link text-body" href="#">
+                                Home
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-body" href="tutorial">Tutorial</NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-body" href="about">About</NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <span @onclick="ToggleTheme" class="nav-link text-body user-select-none" style="height: 100%">
+                                <MaterialIcon Theme="@MaterialIcon.Themes.Filled" Size="22">@App.Theme<span>_mode</span></MaterialIcon>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
         </div>
-        *@
-        <article class="content px-4">
+
+        <article class="content px-4 bg-body">
             @Body
         </article>
     </main>
 </div>
+@code {
 
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            App.Theme = await _localStorage.GetItemAsStringAsync("theme");
+            if (App.Theme == null)
+                ChangeTheme(App.ThemeLight);
+            else
+                StateHasChanged();
+        }
+    }
+
+    public void ToggleTheme()
+    {
+        if (App.Theme == App.ThemeLight)
+            ChangeTheme(App.ThemeDark);
+        else
+            ChangeTheme(App.ThemeLight);
+    }
+
+    public async void ChangeTheme(string theme)
+    {
+        App.Theme = theme;
+        await _localStorage.SetItemAsStringAsync("theme", App.Theme);
+        PageUtils.ReloadPage(_navigationManager);
+    }
+}

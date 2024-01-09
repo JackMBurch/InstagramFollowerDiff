@@ -1,12 +1,14 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿<div class="top-row ps-3 navbar">
     <div class="container-fluid">
+        <span @onclick="ToggleNav">xx</span>
         <a class="navbar-brand" href="">InstagramFollowerDiff</a>
     </div>
 </div>
+<button @onclick="StateChanged" id="update-button">update</button>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+<div class="nav-scrollable" style="@sidebarWidth" @onclick="ToggleNav">
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
@@ -15,8 +17,8 @@
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="tutorial">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Tutorial
             </NavLink>
         </div>
 
@@ -28,3 +30,19 @@
     </nav>
 </div>
 
+@code {
+    public static int width = 250;
+    public static string sidebarWidth => $"width: {width}px;";
+    public static string mainMargin => $"margin-left: {width}px;";
+    public static void OpenNav() => width = 250;
+    public static void CloseNav() => width = 0;
+    public static void ToggleNav()
+    {
+        width = ((width == 0) ? 255 : 0);
+    }
+    public void StateChanged()
+    {
+
+        StateHasChanged();
+    }
+}

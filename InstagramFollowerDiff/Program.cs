@@ -1,3 +1,4 @@
+using Blazored.LocalStorage;
 using InstagramFollowerDiff.Components;
 
 namespace InstagramFollowerDiff
@@ -7,6 +8,8 @@ namespace InstagramFollowerDiff
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddBlazoredLocalStorage();
 
             // Add services to the container.
             builder.Services.AddRazorComponents()

@@ -1,0 +1,19 @@
+﻿@page "/about"
+@inject NavigationManager _navigationManager
+
+<h1>About</h1>
+<p>
+    This site is created wholly by myself.<br>
+    It is intended to be used as a useful tool, and is completley open source.<br>
+    Protecting your privacy is important!</p>
+
+<button type="button" class="btn btn-outline-info" @onclick="NavigateToIG">Check out my account! :)</button>
+<button type="button" class="btn btn-outline-info" @onclick="NavigateToGitHub">Check out the source code!</button>
+
+<p></p>
+
+
+@code {
+    void NavigateToIG() { _navigationManager.NavigateTo("https://www.instagram.com/jackary_burch/"); }
+    void NavigateToGitHub() { _navigationManager.NavigateTo("https://github.com/JackMBurch/InstagramFollowerDiff"); }
+}

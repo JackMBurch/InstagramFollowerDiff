@@ -1,14 +1,14 @@
 ﻿@page "/"
-@using InstagramFollowerDiff.Models
 
 <PageTitle>IGFollowBack</PageTitle>
-<div class="holder">
+<div class="holder bg-body">
     <h1>Instagram Follow Back Checker</h1>
 
     <p>Please upload an instagram data zip file, or a following and follower JSON file.</p>
 
-
-    <InputFile OnChange="@LoadFiles" multiple />
+    <div class="mb-3">
+        <InputFile class="form-control form-control-lg" OnChange="@LoadFiles" multiple />
+    </div>
     <p></p>
 
     @if (Error != null)
