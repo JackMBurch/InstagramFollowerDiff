@@ -17,6 +17,8 @@
     {
         <p class="error">@Error</p>
     }
+
+    <p>@isDevice</p>
 </div>
 
 @if (NotFollowingBack.Count != 0)
@@ -69,6 +71,7 @@
     {
         isDevice = await FindResponsiveness();
         Console.WriteLine(isDevice);
+        StateHasChanged();
     }
 
     public async Task<string> FindResponsiveness()
