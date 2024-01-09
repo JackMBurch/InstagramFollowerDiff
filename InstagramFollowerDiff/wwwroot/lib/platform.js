@@ -7,3 +7,8 @@ function checkCheckBox(i)
 {
     document.getElementById("checkbox-" + i).checked = true;
 }
+
+function clickHref(i)
+{
+    document.getElementById("href-" + i).click();
+}

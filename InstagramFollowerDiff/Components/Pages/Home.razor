@@ -33,6 +33,7 @@
                 <label class="form-check-label" for="flexCheckDefault" id="checkbox-label-@i">
                     @NotFollowingBack[i].User
                 </label>
+                <a id="href-@i" href="@NotFollowingBack[i].Link" style="visibility: none;"></a>
             </li>
         }
     </ul>
@@ -79,16 +80,16 @@
 
     public async void Check(int i)
     {
-        Nav(NotFollowingBack[i].Link);
+        Nav(i);
         await jsRuntime.InvokeVoidAsync("checkCheckBox", i, "_blank");
     }
 
-    public async void Nav(string location)
+    public async void Nav(int i)
     {
         if (mobile)
-            _navigationManager.NavigateTo(location);
+            await jsRuntime.InvokeVoidAsync("clickHref", i, "_blank");
         else
-            await jsRuntime.InvokeVoidAsync("open", location, "_blank");
+            await jsRuntime.InvokeVoidAsync("open", NotFollowingBack[i].Link, "_blank");
     }
 
     private void Go()
