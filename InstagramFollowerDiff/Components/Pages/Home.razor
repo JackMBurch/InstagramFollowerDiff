@@ -35,12 +35,15 @@
                 <label class="form-check-label" for="flexCheckDefault" id="checkbox-label-@i">
                     @NotFollowingBack[i].User
                 </label>
-                <a id="href-@i" href="@NotFollowingBack[i].Link" style="visibility: hidden;"></a>
             </li>
         }
     </ul>
+    @for (int i = 0; i < NotFollowingBack.Count; i++)
+    {
+        <a id="href-@i" href="@NotFollowingBack[i].Link">href-@i</a>
+    }
 }
-@code {
+    @code {
     public static readonly string JsonContentType = "application/json";
     public static readonly string ZipContentType = "application/zip";
     public static readonly string ZipContentType2 = "application/x-zip-compressed";
